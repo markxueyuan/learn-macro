@@ -81,6 +81,33 @@
 (let [a (macroexpand-1 '(memq 3 [1 2 3 4 5]))]
   (eval a))
 
+(defmacro our-doseq
+  [[var sq & return] & body]
+  `(do (doall (map (fn [~var] ~@body) ~sq))
+     (let [~var nil]
+       ~return)))
+
+(our-doseq
+ [x [1 2 3]]
+ (println x))
+
+(defmacro when-bind
+  [[var expr] & body]
+  `(let [~var ~expr]
+     (when ~var
+       ~@body)))
+
+(when-bind [x true] x)
+
+(defmacro cl-do
+  [bindforms [test & result] & body]
+  (let [label (gensym)]
+    `(loop [label ~(make-initforms bindforms)]
+         (if ~test
+           (do ~@result)
+           (do (~@body)
+             (recur ~(make-stepforms bindforms)))))))
+
 
 
 
