@@ -99,14 +99,50 @@
 
 (when-bind [x true] x)
 
+(defn make-initforms
+  [bindforms]
+  (let [func (fn [b]
+               (if (coll? b)
+                 (list (first b) (fnext b))
+                 (list b nil)))]
+    (mapcat func bindforms)))
+
+(defn make-stepforms
+  [bindforms]
+  (let [func (fn [b]
+               (cond (and (coll? b) (= (count b) 3)) (list (nth b 2) (first b))
+                     (and (coll? b)) (first b)
+                     :else nil))]
+    (map func bindforms)))
+
 (defmacro cl-do
   [bindforms [test & result] & body]
   (let [label (gensym)]
-    `(loop [label ~(make-initforms bindforms)]
+    `(loop [~@(make-initforms bindforms)]
          (if ~test
            (do ~@result)
-           (do (~@body)
-             (recur ~(make-stepforms bindforms)))))))
+           (do
+             ~@body
+             (recur ~@(make-stepforms bindforms))))
+       )))
+
+(macroexpand-1 '(cl-do ((x 2 inc)
+        (y 5 inc))
+       ((> x 10) :hehe)
+       (+ x y)))
+
+(cl-do ((x 2 inc)
+        (y 5 inc))
+       ((> x 10) :hehe)
+       (println (+ x y)))
+
+(defmacro our-and
+  [& args]
+  (case (count args)
+    0 true
+    1 (first args)
+    true `(if (first ~args)
+           (our-and (rest args)))))
 
 
 
