@@ -1,4 +1,6 @@
-(ns learn-macro.core)
+(ns learn-macro.core
+  (:require [clojure.repl :refer [source doc]]
+            [clojure.tools.macro :refer [macrolet symbol-macrolet]]))
 
 (defmacro nil!
   [x]
@@ -141,14 +143,45 @@
   (case (count args)
     0 true
     1 (first args)
-    true `(if (first ~args)
-           (our-and (rest args)))))
+    `(if ~(first args)
+           (our-and ~@(rest args)))))
+
+(defmacro our-andb
+  "This makes nothing in clojure environment"
+  [& args]
+  (if (empty? args)
+    true
+    (letfn [(expander [remained]
+              (if-not (empty? (rest remained))
+                `(if ~(first remained)
+                   ~(expander (rest remained)))
+                (first remained)))]
+      (expander args))))
 
 
+(defn foo [x y z]
+  (list x
+        (let [x y]
+          (list x z))))
 
 
+(defmacro foo [x y z]
+  `(list ~x
+         (let [x# ~y]
+           (list x# ~z))))
+
+(foo 1 2 3)
 
 
+;symbol macro requires a package to add on
+
+(macrolet [(foo [form] `(+ ~form ~form))]
+   (foo 2))
+
+
+(symbol-macrolet [hi (do (println "Howdy")
+                       1)]
+    (+ hi 2))
 
 
 
