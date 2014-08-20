@@ -184,5 +184,85 @@
     (+ hi 2))
 
 
+(defn avg [& args]
+  (/ (apply + args) (count args)))
+
+(defmacro avg [& args]
+  `(/ (+ ~@args) ~(count args)))
+
+(macroexpand-1 '(avg 1 2 3 4))
+
+(defmacro nil!
+  [x]
+  `(def ~x nil))
+
+(nil! apple)
+
+(defmacro our-while
+  [test & body]
+  `(cl-do ()
+           ((not ~test))
+           ~@body))
+
+(defn test-while
+  [x]
+  (our-while (< @x 10)
+    (do (println @x)
+      (swap! x inc))))
+
+(test-while (atom 0))
+
+(defmacro our-defn
+  [name params & body]
+  `(do
+     (def ~name (fn ~name ~params ~@body))
+     '~name))
+
+(our-defn hello
+   [x]
+  (+ x 2))
+
+
+(defmacro my-for
+  [[var start stop] & body]
+  `(cl-do ((~var ~start inc) (limit# ~stop))
+          ((> ~var limit#))
+          ~@body))
+
+(my-for [x 1 5]
+   (print x))
+
+(cl-do ((x 1 inc)) ((> x 10)) (println (+ x 2)))
+
+(def w (atom nil))
+
+(defmacro gripe
+  [warning]
+  `(do (swap! w concat (list ~warning)) nil))
+
+(defmacro gripe2
+  [warning]
+  (list 'do (list 'swap! 'w 'concat (list 'list warning)) 'nil))
+
+(defn sample-ratio
+  [v w]
+  (let [vn (count v)
+        wn (count w)]
+    (if (or (< vn 2) (< wn 2))
+      (gripe "sample < 2")
+      (/ vn wn))))
+
+
+(sample-ratio [1] [4])
+
+(macroexpand-1 '(gripe2 "sample < 2"))
+
+(defmacro pathological
+  [& body]
+  (let [syms ])
+
+
+
+
 
 
