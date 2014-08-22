@@ -259,10 +259,170 @@
 
 (defmacro pathological
   [& body]
-  (let [syms ])
+  (let [syms (remove ())]))
+
+
+(symbol? (read-string "a"))
+
+
+(defn func [x] (+ x 1))
+
+(defn mac-f [x] (func x))
+
+(defmacro mac-m [x] `(func ~x))
+
+(defmacro mac-u [x] (list 'func x))
 
 
 
+(letfn [(func [x] (- x 1))]
+  (mac-f 10))
+
+(letfn [(func [x] (- x 1))]
+  (mac-m 10))
+
+(let [func #(- % 1)]
+  (mac-m 10))
+
+(letfn [(func [x] (- x 1))]
+  (mac-u 10))
 
 
 
+(defmacro echo
+  [& args]
+  `'~(concat args (list 'amen)))
+
+(macroexpand-1 '(echo what it is))
+
+
+(defn foo [] (echo x))
+
+(foo)
+
+(defn our-length
+  [x]
+  (if (nil? x)
+    0
+    (inc (our-length (next x)))))
+
+(our-length [1 2 3 4 5 7 7])
+
+
+(defn ntha
+  [n lst]
+  (if (= n 0)
+    (first lst)
+    (ntha (- n 1) (rest lst))))
+
+
+(defmacro nthb
+  [n lst]
+  `(if (= ~n 0)
+     (first ~lst)
+     (nthb (- ~n 1) (rest ~lst))));this is the wrong one
+
+
+(defmacro nthc
+  [n lst]
+  `(cl-do ((~'xu ~n dec)
+           (~'yu ~lst rest))
+           ((= ~'xu 0) (first ~'yu))))
+
+(macroexpand-1 '(nthc 2 [1 2 3 4]))
+
+(defmacro nthd
+  [n lst]
+  `(nth-fn ~n ~lst))
+
+(defn nth-fn
+  [n lst]
+  (if (= n 0)
+    (first lst)
+    (nth-fn (- n 1) (rest lst))))
+
+
+(nthd 3 [1 2 3 4 5])
+
+
+
+(defn or-expand
+  [args]
+  (if (empty? args)
+    nil
+    `(let [sym# ~(first args)]
+       (if sym#
+         sym#
+         (or-expand ~(rest args))))))
+
+(defmacro ora
+  [& args]
+  (or-expand args))
+
+(clojure.pprint/pprint (macroexpand-1 '(ora false false false 3)))
+
+
+(or false false 3)
+
+(defmacro orb
+  [& args]
+  (if (empty? args)
+    nil
+    `(let [sym# ~(first args)]
+       (if sym#
+         sym#
+         (orb ~@ (rest args))))))
+
+
+
+(orb false false false 'a)
+
+
+(defmacro our-let
+  [binds & body]
+  `((fn ~(mapv first (partition 2 binds)) ~@body) ~@(map second (partition 2 binds))))
+
+
+(our-let [x 1 y 2]
+   (/ x y))
+
+
+(defmacro when-bind
+  [[var expr] & body]
+  `(our-let [~var ~expr]
+       (when ~var ~@body)))
+
+(when-bind [y 3]
+    (+ y 4))
+
+(defmacro test-let
+  [var]
+  `(let [~var 2
+         x# 3]
+     (+ ~var x#)))
+
+(test-let u)
+
+
+(defmacro when-bind*
+  [binds & body]
+  (let [binds (partition 2 binds)]
+    (if (empty? binds)
+      `(do ~@body)
+      `(let ~(vec (first binds))
+         (if ~(ffirst binds)
+           (when-bind* ~(flatten (rest binds)) ~@body))))))
+
+
+(defmacro with-gensyms
+  [syms & body]
+  `(let ~(vec (apply concat (map (fn [s] `(~s (gensym))) syms)))
+     ~@body))
+(macroexpand-1 '(with-gensyms [a b c] body))
+
+
+(defmacro try-with-gensyms
+  [var body]
+  `(with-gensyms [a b]
+     (let [a 2 b 3 ~var 4]
+       (+ a b ~@body))))
