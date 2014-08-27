@@ -426,3 +426,117 @@
   `(with-gensyms [a b]
      (let [a 2 b 3 ~var 4]
        (+ a b ~@body))))
+
+(defmacro nif
+  [expr pos zero neg]
+  `(let [g# ~expr]
+     (cond (pos? g#) ~pos
+           (zero? g#) ~zero
+           :else ~neg)))
+
+(map #(nif % 'p 'z 'n) [-3 2 7 0])
+
+(defmacro in
+  [obj & choices]
+  (let [insym# obj]
+     `(or ~@(map #(= insym# %) choices))))
+
+(in 3 3 4 5)
+
+(in 3 4 5 6)
+
+(in [3 4] [4 5] [3 4] [5 6])
+
+(defmacro what-is-this?
+  [a]
+  `'~a)
+
+(what-is-this? [a b])
+
+(what-is-this? 3)
+
+(defmacro inq
+  [obj & args]
+  `(in ~obj ~@(map (fn [a] `'~a) args)))
+
+(inq 'a a b c)
+
+(defmacro in-if
+  [func & choices]
+  (let [func# func]
+     `(or ~@(map (fn [x]
+                   `(~func# ~x))
+                 choices))))
+
+(defmacro testit []
+  `(let [x# 4] x#))
+
+(testit)
+
+(defmacro testagain []
+  (let [x# 4]
+    `[~x#]))
+
+(testagain)
+
+(defn >casex
+  [g cl]
+  (let [k (first cl)
+        r (rest cl)]
+    (cond (list? k) `((in ~g ~@k) ~@r)
+          (inq k true :else) `(true ~@r)
+          true (throw (Exception. "Fuck! You've crossed the line!")))))
+
+(defmacro >case
+  [expr & clauses]
+  (let [g (gensym)]
+  `(let [~g ~expr]
+     (cond ~@(->> (map (fn [cl] (>casex g cl)) clauses)
+                  ((partial apply concat)))))))
+
+(>case (a b)
+   ('(a b) 'haha)
+   ('(b c) 'hehe)
+   (':else 'huahua))
+
+(defmacro is-list?
+  [a]
+  (list? a))
+
+(is-list? (x 2))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
