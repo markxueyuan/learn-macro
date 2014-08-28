@@ -426,3 +426,43 @@
   `(with-gensyms [a b]
      (let [a 2 b 3 ~var 4]
        (+ a b ~@body))))
+
+(defmacro condlet
+  [clauses & body]
+  (let [vars ]))
+
+(cons 'b (cons 'a nil))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
